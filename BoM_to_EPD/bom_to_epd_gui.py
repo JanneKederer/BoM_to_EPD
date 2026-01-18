@@ -252,60 +252,41 @@ class BoMToEPDGUI:
             # Vorschau-Fenster erstellen
             preview_window = tk.Toplevel(self.root)
             preview_window.title("Materialien-Vorschau")
-            preview_window.geometry("1200x700")
+            preview_window.geometry("900x600")
             
-            # Notebook für Tabs
-            notebook = ttk.Notebook(preview_window)
-            notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            # Hauptframe mit Scrollbar
+            main_frame = ttk.Frame(preview_window, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
             
-            # ===== TAB 1: Gefundene Materialien =====
-            found_frame = ttk.Frame(notebook, padding="10")
-            notebook.add(found_frame, text=f"✅ Gefundene Materialien ({len(df_found)})")
+            # Canvas für Scrollbar
+            canvas = tk.Canvas(main_frame)
+            scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+            scrollable_frame = ttk.Frame(canvas)
             
-            # Überschrift
-            found_label = ttk.Label(found_frame, text=f"Materialien mit Mapping gefunden: {len(df_found)}", font=("Arial", 10, "bold"))
-            found_label.pack(pady=(0, 10))
+            scrollable_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
             
-            # Treeview für gefundene Materialien
-            tree_found = ttk.Treeview(found_frame, columns=("Material", "Amount", "Einheit"), show="headings", height=20)
-            tree_found.heading("Material", text="Material")
-            tree_found.heading("Amount", text="Amount")
-            tree_found.heading("Einheit", text="Einheit")
+            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
             
-            tree_found.column("Material", width=400)
-            tree_found.column("Amount", width=150)
-            tree_found.column("Einheit", width=150)
-            
-            # Scrollbar für gefundene
-            scrollbar_found = ttk.Scrollbar(found_frame, orient="vertical", command=tree_found.yview)
-            tree_found.configure(yscrollcommand=scrollbar_found.set)
-            
-            # Daten einfügen
-            for _, row in df_found.iterrows():
-                material = str(row['Material'])
-                amount = f"{row['Final_Amount_A1']:.4f}" if pd.notna(row['Final_Amount_A1']) else "-"
-                unit = str(row['Final_Unit_A1']) if pd.notna(row['Final_Unit_A1']) else "-"
-                tree_found.insert("", tk.END, values=(material, amount, unit))
-            
-            tree_found.pack(side="left", fill=tk.BOTH, expand=True)
-            scrollbar_found.pack(side="right", fill="y")
-            
-            # ===== TAB 2: Fehlende Materialien =====
-            missing_frame = ttk.Frame(notebook, padding="10")
+            # ===== FEHLENDE MATERIALIEN (ZUERST) =====
             if len(df_missing) > 0:
-                notebook.add(missing_frame, text=f"⚠️ Fehlende Materialien ({len(df_missing)})")
+                missing_label = ttk.Label(scrollable_frame, text=f"Fehlende Materialien ({len(df_missing)}) - Bitte prüfen!", font=("Arial", 11, "bold"), foreground="red")
+                missing_label.pack(pady=(0, 5), anchor="w")
                 
-                # Überschrift
-                missing_label = ttk.Label(missing_frame, text=f"Materialien ohne Mapping: {len(df_missing)}", font=("Arial", 10, "bold"))
-                missing_label.pack(pady=(0, 10))
+                # Frame für fehlende Materialien
+                missing_frame = ttk.Frame(scrollable_frame)
+                missing_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
                 
                 # Treeview für fehlende Materialien
-                tree_missing = ttk.Treeview(missing_frame, columns=("Material", "Amount"), show="headings", height=20)
+                tree_missing = ttk.Treeview(missing_frame, columns=("Material", "Amount"), show="headings", height=8)
                 tree_missing.heading("Material", text="Material")
                 tree_missing.heading("Amount", text="Amount")
                 
                 tree_missing.column("Material", width=500)
-                tree_missing.column("Amount", width=200)
+                tree_missing.column("Amount", width=150)
                 
                 # Scrollbar für fehlende
                 scrollbar_missing = ttk.Scrollbar(missing_frame, orient="vertical", command=tree_missing.yview)
@@ -325,6 +306,42 @@ class BoMToEPDGUI:
                 
                 tree_missing.pack(side="left", fill=tk.BOTH, expand=True)
                 scrollbar_missing.pack(side="right", fill="y")
+            
+            # ===== GEFUNDENE MATERIALIEN =====
+            found_label = ttk.Label(scrollable_frame, text=f"Gefundene Materialien ({len(df_found)})", font=("Arial", 11, "bold"))
+            found_label.pack(pady=(10, 5) if len(df_missing) > 0 else (0, 5), anchor="w")
+            
+            # Frame für gefundene Materialien
+            found_frame = ttk.Frame(scrollable_frame)
+            found_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+            
+            # Treeview für gefundene Materialien
+            tree_found = ttk.Treeview(found_frame, columns=("Material", "Amount", "Einheit"), show="headings", height=8)
+            tree_found.heading("Material", text="Material")
+            tree_found.heading("Amount", text="Amount")
+            tree_found.heading("Einheit", text="Einheit")
+            
+            tree_found.column("Material", width=400)
+            tree_found.column("Amount", width=120)
+            tree_found.column("Einheit", width=120)
+            
+            # Scrollbar für gefundene
+            scrollbar_found = ttk.Scrollbar(found_frame, orient="vertical", command=tree_found.yview)
+            tree_found.configure(yscrollcommand=scrollbar_found.set)
+            
+            # Daten einfügen
+            for _, row in df_found.iterrows():
+                material = str(row['Material'])
+                amount = f"{row['Final_Amount_A1']:.4f}" if pd.notna(row['Final_Amount_A1']) else "-"
+                unit = str(row['Final_Unit_A1']) if pd.notna(row['Final_Unit_A1']) else "-"
+                tree_found.insert("", tk.END, values=(material, amount, unit))
+            
+            tree_found.pack(side="left", fill=tk.BOTH, expand=True)
+            scrollbar_found.pack(side="right", fill="y")
+            
+            # Canvas und Scrollbar packen
+            canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
             
             # Schließen-Button
             button_frame = ttk.Frame(preview_window)
