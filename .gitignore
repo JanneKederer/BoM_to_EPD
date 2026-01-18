@@ -23,9 +23,9 @@ ENV/
 Thumbs.db
 
 # Projekt-spezifisch
-results/
-*.xlsx
-!Mapping_Materials_to_Processes.xlsx
+#results/
+#*.xlsx
+#!Mapping_Materials_to_Processes.xlsx
 
 # Logs
 *.log
