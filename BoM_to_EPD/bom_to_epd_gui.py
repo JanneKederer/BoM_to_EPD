@@ -245,80 +245,96 @@ class BoMToEPDGUI:
                 self.amount_column_index.get()
             )
             
+            # Materialien in gefundene und fehlende trennen
+            df_found = df_merged[df_merged['Process_uuid_A1'].notna()].copy()
+            df_missing = df_merged[df_merged['Process_uuid_A1'].isna()].copy()
+            
             # Vorschau-Fenster erstellen
             preview_window = tk.Toplevel(self.root)
             preview_window.title("Materialien-Vorschau")
-            preview_window.geometry("1000x600")
+            preview_window.geometry("1200x700")
             
-            # Frame für die Tabelle
-            frame = ttk.Frame(preview_window, padding="10")
-            frame.pack(fill=tk.BOTH, expand=True)
+            # Notebook für Tabs
+            notebook = ttk.Notebook(preview_window)
+            notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            
+            # ===== TAB 1: Gefundene Materialien =====
+            found_frame = ttk.Frame(notebook, padding="10")
+            notebook.add(found_frame, text=f"✅ Gefundene Materialien ({len(df_found)})")
             
             # Überschrift
-            info_label = ttk.Label(frame, text=f"Gefundene Materialien: {len(df_merged)}", font=("Arial", 10, "bold"))
-            info_label.pack(pady=(0, 10))
+            found_label = ttk.Label(found_frame, text=f"Materialien mit Mapping gefunden: {len(df_found)}", font=("Arial", 10, "bold"))
+            found_label.pack(pady=(0, 10))
             
-            # Treeview für die Tabelle
-            tree = ttk.Treeview(frame, columns=("Material", "Amount", "Unit_A1", "UUID_A1", "Unit_A3", "UUID_A3"), show="headings", height=20)
+            # Treeview für gefundene Materialien
+            tree_found = ttk.Treeview(found_frame, columns=("Material", "Amount", "Einheit"), show="headings", height=20)
+            tree_found.heading("Material", text="Material")
+            tree_found.heading("Amount", text="Amount")
+            tree_found.heading("Einheit", text="Einheit")
             
-            # Spalten definieren
-            tree.heading("Material", text="Material")
-            tree.heading("Amount", text="Amount (A1)")
-            tree.heading("Unit_A1", text="Einheit (A1)")
-            tree.heading("UUID_A1", text="UUID (A1)")
-            tree.heading("Unit_A3", text="Einheit (A3)")
-            tree.heading("UUID_A3", text="UUID (A3)")
+            tree_found.column("Material", width=400)
+            tree_found.column("Amount", width=150)
+            tree_found.column("Einheit", width=150)
             
-            tree.column("Material", width=250)
-            tree.column("Amount", width=100)
-            tree.column("Unit_A1", width=100)
-            tree.column("UUID_A1", width=200)
-            tree.column("Unit_A3", width=100)
-            tree.column("UUID_A3", width=200)
-            
-            # Scrollbar
-            scrollbar_tree = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
-            tree.configure(yscrollcommand=scrollbar_tree.set)
+            # Scrollbar für gefundene
+            scrollbar_found = ttk.Scrollbar(found_frame, orient="vertical", command=tree_found.yview)
+            tree_found.configure(yscrollcommand=scrollbar_found.set)
             
             # Daten einfügen
-            missing_count = 0
-            for _, row in df_merged.iterrows():
+            for _, row in df_found.iterrows():
                 material = str(row['Material'])
                 amount = f"{row['Final_Amount_A1']:.4f}" if pd.notna(row['Final_Amount_A1']) else "-"
-                unit_a1 = str(row['Final_Unit_A1']) if pd.notna(row['Final_Unit_A1']) else "-"
-                uuid_a1 = str(row['Process_uuid_A1']) if pd.notna(row['Process_uuid_A1']) else "❌ FEHLT"
-                unit_a3 = str(row['Final_Unit_A3']) if pd.notna(row['Final_Unit_A3']) else "-"
-                uuid_a3 = str(row['Process_uuid_A3']) if pd.notna(row['Process_uuid_A3']) else "-"
+                unit = str(row['Final_Unit_A1']) if pd.notna(row['Final_Unit_A1']) else "-"
+                tree_found.insert("", tk.END, values=(material, amount, unit))
+            
+            tree_found.pack(side="left", fill=tk.BOTH, expand=True)
+            scrollbar_found.pack(side="right", fill="y")
+            
+            # ===== TAB 2: Fehlende Materialien =====
+            missing_frame = ttk.Frame(notebook, padding="10")
+            if len(df_missing) > 0:
+                notebook.add(missing_frame, text=f"⚠️ Fehlende Materialien ({len(df_missing)})")
                 
-                if pd.isna(row['Process_uuid_A1']):
-                    missing_count += 1
-                    tag = "missing"
-                else:
-                    tag = ""
+                # Überschrift
+                missing_label = ttk.Label(missing_frame, text=f"Materialien ohne Mapping: {len(df_missing)}", font=("Arial", 10, "bold"))
+                missing_label.pack(pady=(0, 10))
                 
-                tree.insert("", tk.END, values=(material, amount, unit_a1, uuid_a1, unit_a3, uuid_a3), tags=(tag,))
-            
-            # Fehlende Materialien rot markieren
-            tree.tag_configure("missing", background="#ffcccc")
-            
-            # Treeview und Scrollbar packen
-            tree.pack(side="left", fill=tk.BOTH, expand=True)
-            scrollbar_tree.pack(side="right", fill="y")
-            
-            # Zusammenfassung
-            summary_text = f"Gesamt: {len(df_merged)} Materialien"
-            if missing_count > 0:
-                summary_text += f" | ⚠️ {missing_count} ohne A1-UUID"
-            summary_label = ttk.Label(frame, text=summary_text, font=("Arial", 9))
-            summary_label.pack(pady=(10, 0))
+                # Treeview für fehlende Materialien
+                tree_missing = ttk.Treeview(missing_frame, columns=("Material", "Amount"), show="headings", height=20)
+                tree_missing.heading("Material", text="Material")
+                tree_missing.heading("Amount", text="Amount")
+                
+                tree_missing.column("Material", width=500)
+                tree_missing.column("Amount", width=200)
+                
+                # Scrollbar für fehlende
+                scrollbar_missing = ttk.Scrollbar(missing_frame, orient="vertical", command=tree_missing.yview)
+                tree_missing.configure(yscrollcommand=scrollbar_missing.set)
+                
+                # Daten einfügen
+                for _, row in df_missing.iterrows():
+                    material = str(row['Material'])
+                    # Verwende das ursprüngliche Amount
+                    if 'Amount' in row and pd.notna(row['Amount']):
+                        amount = f"{row['Amount']:.4f}"
+                    elif 'Final_Amount_A1' in row and pd.notna(row['Final_Amount_A1']):
+                        amount = f"{row['Final_Amount_A1']:.4f}"
+                    else:
+                        amount = "-"
+                    tree_missing.insert("", tk.END, values=(material, amount))
+                
+                tree_missing.pack(side="left", fill=tk.BOTH, expand=True)
+                scrollbar_missing.pack(side="right", fill="y")
             
             # Schließen-Button
-            close_button = ttk.Button(frame, text="Schließen", command=preview_window.destroy)
-            close_button.pack(pady=10)
+            button_frame = ttk.Frame(preview_window)
+            button_frame.pack(pady=10)
+            close_button = ttk.Button(button_frame, text="Schließen", command=preview_window.destroy)
+            close_button.pack()
             
-            self.log(f"Materialien-Vorschau angezeigt: {len(df_merged)} Materialien gefunden")
-            if missing_count > 0:
-                self.log(f"⚠️ Warnung: {missing_count} Materialien haben keine A1-UUID")
+            self.log(f"Materialien-Vorschau angezeigt: {len(df_found)} gefunden, {len(df_missing)} fehlend")
+            if len(df_missing) > 0:
+                self.log(f"⚠️ Warnung: {len(df_missing)} Materialien haben kein Mapping")
             
         except Exception as e:
             error_msg = f"Fehler beim Laden der Materialien: {str(e)}"

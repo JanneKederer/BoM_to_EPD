@@ -126,7 +126,7 @@ def read_materials_and_map(file_path, sheet_name, mapping_file, start_row_index=
         axis=1
     )
 
-    return df_merged[['Material',
+    return df_merged[['Material', 'Amount',
                       'Final_Amount_A1', 'Final_Unit_A1', 'Process_uuid_A1',
                       'Final_Amount_A3', 'Final_Unit_A3', 'Process_uuid_A3']]
 
