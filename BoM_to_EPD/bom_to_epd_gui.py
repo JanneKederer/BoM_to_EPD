@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, messagebox
 from pathlib import Path
 import threading
 from bom_to_epd import process_epd, read_materials_and_map
@@ -179,13 +179,6 @@ class BoMToEPDGUI:
         ttk.Button(button_frame, text="Abbrechen", command=self.root.quit, width=20).pack(side=tk.LEFT, padx=5)
         current_row += 1
         
-        # Log-Ausgabe
-        ttk.Label(scrollable_frame, text="Log-Ausgabe", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(10, 5))
-        current_row += 1
-        
-        self.log_text = scrolledtext.ScrolledText(scrollable_frame, height=10, width=80)
-        self.log_text.grid(row=current_row, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
-        
         # Canvas und Scrollbar packen
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
@@ -200,7 +193,6 @@ class BoMToEPDGUI:
         )
         if filename:
             self.main_file_path.set(filename)
-            self.log(f"BoM-Datei ausgewählt: {filename}")
     
     def browse_mapping_file(self):
         filename = filedialog.askopenfilename(
@@ -209,13 +201,11 @@ class BoMToEPDGUI:
         )
         if filename:
             self.mapping_file_path.set(filename)
-            self.log(f"Mapping-Datei ausgewählt: {filename}")
     
     def browse_output_dir(self):
         dirname = filedialog.askdirectory(title="Output-Verzeichnis auswählen")
         if dirname:
             self.output_dir.set(dirname)
-            self.log(f"Output-Verzeichnis ausgewählt: {dirname}")
     
     def preview_materials(self):
         """Lädt Materialien aus Excel und zeigt sie in einem Vorschau-Fenster an"""
@@ -234,7 +224,6 @@ class BoMToEPDGUI:
             return
         
         try:
-            self.log("Lade Materialien...")
             # Materialien lesen (ohne API-Calls)
             df_merged = read_materials_and_map(
                 self.main_file_path.get(),
@@ -254,7 +243,7 @@ class BoMToEPDGUI:
             preview_window.title("Materialien-Vorschau")
             preview_window.geometry("900x600")
             
-            # Hauptframe mit Scrollbar
+            # Hauptframe
             main_frame = ttk.Frame(preview_window, padding="10")
             main_frame.pack(fill=tk.BOTH, expand=True)
             
@@ -278,15 +267,15 @@ class BoMToEPDGUI:
                 
                 # Frame für fehlende Materialien
                 missing_frame = ttk.Frame(scrollable_frame)
-                missing_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+                missing_frame.pack(fill=tk.X, pady=(0, 15))
                 
                 # Treeview für fehlende Materialien
                 tree_missing = ttk.Treeview(missing_frame, columns=("Material", "Amount"), show="headings", height=8)
                 tree_missing.heading("Material", text="Material")
                 tree_missing.heading("Amount", text="Amount")
                 
-                tree_missing.column("Material", width=500)
-                tree_missing.column("Amount", width=150)
+                tree_missing.column("Material", width=650, minwidth=400)
+                tree_missing.column("Amount", width=150, minwidth=100)
                 
                 # Scrollbar für fehlende
                 scrollbar_missing = ttk.Scrollbar(missing_frame, orient="vertical", command=tree_missing.yview)
@@ -313,7 +302,7 @@ class BoMToEPDGUI:
             
             # Frame für gefundene Materialien
             found_frame = ttk.Frame(scrollable_frame)
-            found_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+            found_frame.pack(fill=tk.X, pady=(0, 10))
             
             # Treeview für gefundene Materialien
             tree_found = ttk.Treeview(found_frame, columns=("Material", "Amount", "Einheit"), show="headings", height=8)
@@ -321,9 +310,9 @@ class BoMToEPDGUI:
             tree_found.heading("Amount", text="Amount")
             tree_found.heading("Einheit", text="Einheit")
             
-            tree_found.column("Material", width=400)
-            tree_found.column("Amount", width=120)
-            tree_found.column("Einheit", width=120)
+            tree_found.column("Material", width=500, minwidth=300)
+            tree_found.column("Amount", width=150, minwidth=100)
+            tree_found.column("Einheit", width=150, minwidth=100)
             
             # Scrollbar für gefundene
             scrollbar_found = ttk.Scrollbar(found_frame, orient="vertical", command=tree_found.yview)
@@ -345,20 +334,13 @@ class BoMToEPDGUI:
             
             # Schließen-Button
             button_frame = ttk.Frame(preview_window)
-            button_frame.pack(pady=10)
+            button_frame.pack(pady=(5, 10))
             close_button = ttk.Button(button_frame, text="Schließen", command=preview_window.destroy)
             close_button.pack()
-            
-            self.log(f"Materialien-Vorschau angezeigt: {len(df_found)} gefunden, {len(df_missing)} fehlend")
-            if len(df_missing) > 0:
-                self.log(f"⚠️ Warnung: {len(df_missing)} Materialien haben kein Mapping")
             
         except Exception as e:
             error_msg = f"Fehler beim Laden der Materialien: {str(e)}"
             messagebox.showerror("Fehler", error_msg)
-            self.log(error_msg)
-            import traceback
-            self.log(traceback.format_exc())
     
     def log(self, message):
         self.log_text.insert(tk.END, message + "\n")
@@ -386,10 +368,6 @@ class BoMToEPDGUI:
     def process_epd(self):
         if not self.validate_inputs():
             return
-        
-        # UI deaktivieren während der Verarbeitung
-        self.log_text.delete(1.0, tk.END)
-        self.log("Starte EPD-Erstellung...")
         
         # In separatem Thread ausführen, damit UI nicht einfriert
         thread = threading.Thread(target=self._process_epd_thread)
@@ -423,9 +401,6 @@ class BoMToEPDGUI:
             output_dir.mkdir(parents=True, exist_ok=True)
             
             # EPD verarbeiten
-            self.root.after(0, self.log, f"Verarbeite Datei: {self.main_file_path.get()}")
-            self.root.after(0, self.log, f"Sheet: {self.sheet_name.get()}")
-            
             resp = process_epd(
                 main_file_path=self.main_file_path.get(),
                 sheet_name=self.sheet_name.get(),
@@ -443,28 +418,17 @@ class BoMToEPDGUI:
                 api_key=self.api_key,
                 output_dir=output_dir,
                 skip_missing_materials=self.skip_missing.get(),
-                log_callback=lambda msg: self.root.after(0, self.log, msg)
+                log_callback=None
             )
             
             if resp is not None:
-                self.root.after(0, self.log, "EPD erfolgreich erstellt!")
-                self.root.after(0, self.log, f"Status-Code: {resp.status_code}")
-                try:
-                    response_json = resp.json()
-                    self.root.after(0, self.log, f"API Antwort: {response_json}")
-                except:
-                    self.root.after(0, self.log, f"API Antwort: {resp.text}")
                 self.root.after(0, messagebox.showinfo, "Erfolg", "EPD wurde erfolgreich erstellt!")
             else:
-                self.root.after(0, self.log, "Vorgang abgebrochen.")
                 self.root.after(0, messagebox.showwarning, "Abgebrochen", "Der Vorgang wurde abgebrochen.")
                 
         except Exception as e:
             error_msg = f"Fehler: {str(e)}"
-            self.root.after(0, self.log, error_msg)
             self.root.after(0, messagebox.showerror, "Fehler", error_msg)
-            import traceback
-            self.root.after(0, self.log, traceback.format_exc())
 
 if __name__ == "__main__":
     root = tk.Tk()
