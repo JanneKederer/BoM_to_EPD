@@ -23,8 +23,9 @@ class BoMToEPDGUI:
         self.amount_column_index = tk.IntVar(value=4)
         self.root_repository = tk.StringVar(value="https://lca.dev.ditwin.cloud/Playground/Ecoinvent_3_10_EN15804_results2")
         self.target_repository = tk.StringVar(value="https://lca.dev.ditwin.cloud/Computed/HVDC_Repo")
-        self.url_api = tk.StringVar(value="https://olca-epd.dev.ditwin.cloud/run-epd-tree")
-        self.api_key = tk.StringVar(value="develop")
+        # API & Method Library - fest voreingestellt
+        self.url_api = "https://olca-epd.dev.ditwin.cloud/run-epd-tree"
+        self.api_key = "develop"
         self.output_dir = tk.StringVar(value=str(Path(__file__).parent / "results"))
         self.skip_missing = tk.BooleanVar(value=False)
         
@@ -36,9 +37,9 @@ class BoMToEPDGUI:
         self.auth_user2 = tk.StringVar(value="janne_teresa_kederer_siemens_energy_com")
         self.auth_password2 = tk.StringVar(value="Test4EPDtree!")
         
-        # Method Lib
-        self.method_url = tk.StringVar(value="https://lca.ditwin.cloud")
-        self.method_name = tk.StringVar(value="en15804_pef31_indata_lcia_method")
+        # Method Lib - fest voreingestellt
+        self.method_url = "https://lca.ditwin.cloud"
+        self.method_name = "en15804_pef31_indata_lcia_method"
         
         self.create_widgets()
         
@@ -157,27 +158,7 @@ class BoMToEPDGUI:
         epd_unit_combo.grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
         current_row += 1
         
-        # ===== 5. API & METHOD LIBRARY =====
-        ttk.Label(scrollable_frame, text="5. API & Method Library", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="API URL:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.url_api, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="API Key:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.api_key, width=20).grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="Method URL:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.method_url, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="Method Name:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.method_name, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
-        current_row += 1
-        
-        # ===== 6. AUSGABE & START =====
+        # ===== 5. AUSGABE & START =====
         ttk.Label(scrollable_frame, text="6. Ausgabe & Start", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
         current_row += 1
         
@@ -398,10 +379,10 @@ class BoMToEPDGUI:
                 }
             ]
             
-            # Method Lib erstellen
+            # Method Lib erstellen (fest voreingestellt)
             method_lib = {
-                "url": self.method_url.get(),
-                "name": self.method_name.get()
+                "url": self.method_url,
+                "name": self.method_name
             }
             
             # Output-Verzeichnis erstellen
@@ -425,8 +406,8 @@ class BoMToEPDGUI:
                 amount_column_index=self.amount_column_index.get(),
                 auth_list=auth_list,
                 method_lib=method_lib,
-                url_api=self.url_api.get(),
-                api_key=self.api_key.get(),
+                url_api=self.url_api,
+                api_key=self.api_key,
                 output_dir=output_dir,
                 skip_missing_materials=self.skip_missing.get(),
                 log_callback=lambda msg: self.root.after(0, self.log, msg)
