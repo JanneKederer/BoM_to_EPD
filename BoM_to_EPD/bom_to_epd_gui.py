@@ -14,12 +14,12 @@ class BoMToEPDGUI:
         # Variablen
         self.main_file_path = tk.StringVar()
         self.mapping_file_path = tk.StringVar(value=str(Path(__file__).parent / "Mapping_Materials_to_Processes.xlsx"))
-        self.sheet_name = tk.StringVar(value="4.1 Carbon Footprint Tool")
-        self.full_name = tk.StringVar(value="Ion Exchanger - Purolite MB400 - 1kg")
+        self.sheet_name = tk.StringVar()
+        self.full_name = tk.StringVar()
         self.epd_unit = tk.StringVar(value="kg")
         self.epd_unit_options = ["kg", "Item(s)", "m", "m²", "m³", "t", "g", "l", "ml"]
-        self.material_column = tk.StringVar(value="C")  # Spalte C
-        self.amount_column = tk.StringVar(value="E")  # Spalte E
+        self.material_column = tk.StringVar()
+        self.amount_column = tk.StringVar()
         self.root_repository = tk.StringVar(value="https://lca.dev.ditwin.cloud/Playground/Ecoinvent_3_10_EN15804_results2")
         self.target_repository = tk.StringVar(value="https://lca.dev.ditwin.cloud/Computed/HVDC_Repo")
         # API & Method Library - fest voreingestellt
@@ -44,8 +44,8 @@ class BoMToEPDGUI:
         
     def create_widgets(self):
         # Hauptframe mit Scrollbar
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame = ttk.Frame(self.root)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # Canvas für Scrollbar
         canvas = tk.Canvas(main_frame)
@@ -94,6 +94,19 @@ class BoMToEPDGUI:
         preview_frame = ttk.Frame(scrollable_frame)
         preview_frame.grid(row=current_row, column=0, columnspan=3, pady=10)
         ttk.Button(preview_frame, text="📋 Materialien laden & Vorschau anzeigen", command=self.preview_materials, width=40).pack()
+        current_row += 1
+        
+        # ===== EPD-EINSTELLUNGEN =====
+        ttk.Label(scrollable_frame, text="EPD-Einstellungen", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
+        current_row += 1
+        
+        ttk.Label(scrollable_frame, text="EPD-Name:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.full_name, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
+        current_row += 1
+        
+        ttk.Label(scrollable_frame, text="EPD-Einheit:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
+        epd_unit_combo = ttk.Combobox(scrollable_frame, textvariable=self.epd_unit, values=self.epd_unit_options, width=20, state="readonly")
+        epd_unit_combo.grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
         current_row += 1
         
         # ===== AUTHENTIFIZIERUNG =====
@@ -145,19 +158,6 @@ class BoMToEPDGUI:
         
         ttk.Label(scrollable_frame, text="Target Repository:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.target_repository, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
-        current_row += 1
-        
-        # ===== EPD-EINSTELLUNGEN =====
-        ttk.Label(scrollable_frame, text="EPD-Einstellungen", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="EPD-Name:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.full_name, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="EPD-Einheit:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        epd_unit_combo = ttk.Combobox(scrollable_frame, textvariable=self.epd_unit, values=self.epd_unit_options, width=20, state="readonly")
-        epd_unit_combo.grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
         current_row += 1
         
         # ===== AUSGABE & START =====
