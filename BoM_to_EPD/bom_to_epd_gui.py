@@ -28,11 +28,11 @@ class BoMToEPDGUI:
         self.output_dir = tk.StringVar(value=str(Path(__file__).parent / "results"))
         self.skip_missing = tk.BooleanVar(value=False)
         
-        # Auth-Einstellungen
-        self.auth_url1 = tk.StringVar(value="https://lca.ditwin.cloud")
+        # Auth-Einstellungen (URLs sind fest voreingestellt)
+        self.auth_url1 = "https://lca.ditwin.cloud"
+        self.auth_url2 = "https://lca.dev.ditwin.cloud"
         self.auth_user1 = tk.StringVar(value="janne_teresa_kederer_siemens_energy_com")
         self.auth_password1 = tk.StringVar(value="Test4EPDtree!")
-        self.auth_url2 = tk.StringVar(value="https://lca.dev.ditwin.cloud")
         self.auth_user2 = tk.StringVar(value="janne_teresa_kederer_siemens_energy_com")
         self.auth_password2 = tk.StringVar(value="Test4EPDtree!")
         
@@ -62,8 +62,8 @@ class BoMToEPDGUI:
         
         current_row = 0
         
-        # ===== 1. DATEIEN & EXCEL-EINSTELLUNGEN =====
-        ttk.Label(scrollable_frame, text="1. Dateien & Excel-Einstellungen", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(0, 5))
+        # ===== DATEIEN & EXCEL-EINSTELLUNGEN =====
+        ttk.Label(scrollable_frame, text="Dateien & Excel-Einstellungen", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(0, 5))
         current_row += 1
         
         ttk.Label(scrollable_frame, text="BoM Excel-Datei:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
@@ -96,13 +96,12 @@ class BoMToEPDGUI:
         ttk.Button(preview_frame, text="📋 Materialien laden & Vorschau anzeigen", command=self.preview_materials, width=40).pack()
         current_row += 1
         
-        # ===== 2. AUTHENTIFIZIERUNG =====
-        ttk.Label(scrollable_frame, text="2. Authentifizierung", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
+        # ===== AUTHENTIFIZIERUNG =====
+        ttk.Label(scrollable_frame, text="Authentifizierung", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
         current_row += 1
         
         # Prod (lca.ditwin.cloud)
-        ttk.Label(scrollable_frame, text="Prod (lca.ditwin.cloud) - URL:", font=("Arial", 9, "bold")).grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.auth_url1, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
+        ttk.Label(scrollable_frame, text="Prod (lca.ditwin.cloud)", font=("Arial", 10, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 2))
         current_row += 1
         
         ttk.Label(scrollable_frame, text="Prod - User:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
@@ -119,8 +118,7 @@ class BoMToEPDGUI:
         current_row += 1
         
         # Dev (lca.dev.ditwin.cloud)
-        ttk.Label(scrollable_frame, text="Dev (lca.dev.ditwin.cloud) - URL:", font=("Arial", 9, "bold")).grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.auth_url2, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
+        ttk.Label(scrollable_frame, text="Dev (lca.dev.ditwin.cloud)", font=("Arial", 10, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", padx=5, pady=(10, 2))
         current_row += 1
         
         ttk.Label(scrollable_frame, text="Dev - User:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
@@ -136,8 +134,8 @@ class BoMToEPDGUI:
         ttk.Checkbutton(password_frame2, text="Anzeigen", variable=self.show_password2, command=lambda: self.toggle_password(self.auth_password2_entry, self.show_password2)).pack(side="left", padx=(5, 0))
         current_row += 1
         
-        # ===== 3. REPOSITORIES =====
-        ttk.Label(scrollable_frame, text="3. Repositories", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
+        # ===== REPOSITORIES =====
+        ttk.Label(scrollable_frame, text="Repositories", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
         current_row += 1
         
         ttk.Label(scrollable_frame, text="Root Repository (Ecoinvent):").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
@@ -149,8 +147,8 @@ class BoMToEPDGUI:
         ttk.Entry(scrollable_frame, textvariable=self.target_repository, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
         current_row += 1
         
-        # ===== 4. EPD-EINSTELLUNGEN =====
-        ttk.Label(scrollable_frame, text="4. EPD-Einstellungen", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
+        # ===== EPD-EINSTELLUNGEN =====
+        ttk.Label(scrollable_frame, text="EPD-Einstellungen", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
         current_row += 1
         
         ttk.Label(scrollable_frame, text="EPD-Name:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
@@ -162,8 +160,8 @@ class BoMToEPDGUI:
         epd_unit_combo.grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
         current_row += 1
         
-        # ===== 5. AUSGABE & START =====
-        ttk.Label(scrollable_frame, text="6. Ausgabe & Start", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
+        # ===== AUSGABE & START =====
+        ttk.Label(scrollable_frame, text="Ausgabe & Start", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
         current_row += 1
         
         ttk.Label(scrollable_frame, text="Output-Verzeichnis:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
@@ -402,12 +400,12 @@ class BoMToEPDGUI:
             # Auth-Liste erstellen
             auth_list = [
                 {
-                    "url": self.auth_url1.get(),
+                    "url": self.auth_url1,
                     "user": self.auth_user1.get(),
                     "password": self.auth_password1.get()
                 },
                 {
-                    "url": self.auth_url2.get(),
+                    "url": self.auth_url2,
                     "user": self.auth_user2.get(),
                     "password": self.auth_password2.get()
                 }
