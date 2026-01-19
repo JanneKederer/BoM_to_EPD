@@ -259,23 +259,12 @@ def process_epd(main_file_path, sheet_name, mapping_file_path, full_name, epd_un
             print(warning_msg)
 
         if not skip_missing_materials:
-            # Interaktive Bestätigung (nur wenn nicht über GUI)
+            # Bei GUI: automatisch überspringen, wenn nicht explizit erlaubt
             if log_callback:
-                # Bei GUI: automatisch überspringen, wenn nicht explizit erlaubt
                 log_callback("Fehlende Materialien werden übersprungen.")
             else:
-                while True:
-                    confirm = input("Fortfahren mit diesen fehlenden Materialien? (j/n): ").strip().lower()
-                    if confirm in ['ja', 'j', 'y']:
-                        break
-                    elif confirm in ['nein', 'n']:
-                        if log_callback:
-                            log_callback("Vorgang abgebrochen.")
-                        else:
-                            print("Vorgang abgebrochen.")
-                        return None
-                    else:
-                        print("Bitte 'ja' oder 'nein' eingeben.")
+                # Bei CLI: automatisch überspringen (keine interaktive Eingabe mehr)
+                print("Fehlende Materialien werden übersprungen.")
 
         df_for_payload = df_for_payload[df_for_payload['Process_uuid_A1'].notna()]
 

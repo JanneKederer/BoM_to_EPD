@@ -9,7 +9,7 @@ class BoMToEPDGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("BoM zu EPD Konverter")
-        self.root.geometry("800x900")
+        self.root.geometry("800x700")
         
         # Variablen
         self.main_file_path = tk.StringVar()
@@ -18,9 +18,8 @@ class BoMToEPDGUI:
         self.full_name = tk.StringVar(value="Ion Exchanger - Purolite MB400 - 1kg")
         self.epd_unit = tk.StringVar(value="kg")
         self.epd_unit_options = ["kg", "Item(s)", "m", "m²", "m³", "t", "g", "l", "ml"]
-        self.start_row_index = tk.IntVar(value=5)
-        self.material_column_index = tk.IntVar(value=2)  # Spalte C = Index 2
-        self.amount_column_index = tk.IntVar(value=4)
+        self.material_column = tk.StringVar(value="C")  # Spalte C
+        self.amount_column = tk.StringVar(value="E")  # Spalte E
         self.root_repository = tk.StringVar(value="https://lca.dev.ditwin.cloud/Playground/Ecoinvent_3_10_EN15804_results2")
         self.target_repository = tk.StringVar(value="https://lca.dev.ditwin.cloud/Computed/HVDC_Repo")
         # API & Method Library - fest voreingestellt
@@ -81,19 +80,14 @@ class BoMToEPDGUI:
         ttk.Entry(scrollable_frame, textvariable=self.sheet_name, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
         current_row += 1
         
-        ttk.Label(scrollable_frame, text="Start-Zeilenindex:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Spinbox(scrollable_frame, from_=0, to=100, textvariable=self.start_row_index, width=20).grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
-        ttk.Label(scrollable_frame, text="(0 = Zeile 1, 1 = Zeile 2, ...)", font=("Arial", 8)).grid(row=current_row, column=2, sticky="w", padx=5)
+        ttk.Label(scrollable_frame, text="Material-Spalte:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.material_column, width=5).grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
+        ttk.Label(scrollable_frame, text="(z.B. A, B, C, ...)", font=("Arial", 8)).grid(row=current_row, column=2, sticky="w", padx=5)
         current_row += 1
         
-        ttk.Label(scrollable_frame, text="Material-Spaltenindex:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Spinbox(scrollable_frame, from_=0, to=20, textvariable=self.material_column_index, width=20).grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
-        ttk.Label(scrollable_frame, text="(0 = A, 1 = B, 2 = C, ...)", font=("Arial", 8)).grid(row=current_row, column=2, sticky="w", padx=5)
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="Amount-Spaltenindex:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Spinbox(scrollable_frame, from_=0, to=20, textvariable=self.amount_column_index, width=20).grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
-        ttk.Label(scrollable_frame, text="(0 = A, 1 = B, 2 = C, ...)", font=("Arial", 8)).grid(row=current_row, column=2, sticky="w", padx=5)
+        ttk.Label(scrollable_frame, text="Amount-Spalte:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(scrollable_frame, textvariable=self.amount_column, width=5).grid(row=current_row, column=1, padx=5, pady=2, sticky="w")
+        ttk.Label(scrollable_frame, text="(z.B. A, B, C, ...)", font=("Arial", 8)).grid(row=current_row, column=2, sticky="w", padx=5)
         current_row += 1
         
         # Materialien-Vorschau Button
@@ -116,7 +110,12 @@ class BoMToEPDGUI:
         current_row += 1
         
         ttk.Label(scrollable_frame, text="Prod - Password:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.auth_password1, show="*", width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
+        password_frame1 = ttk.Frame(scrollable_frame)
+        password_frame1.grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
+        self.auth_password1_entry = ttk.Entry(password_frame1, textvariable=self.auth_password1, show="*", width=45)
+        self.auth_password1_entry.pack(side="left")
+        self.show_password1 = tk.BooleanVar(value=False)
+        ttk.Checkbutton(password_frame1, text="Anzeigen", variable=self.show_password1, command=lambda: self.toggle_password(self.auth_password1_entry, self.show_password1)).pack(side="left", padx=(5, 0))
         current_row += 1
         
         # Dev (lca.dev.ditwin.cloud)
@@ -129,7 +128,12 @@ class BoMToEPDGUI:
         current_row += 1
         
         ttk.Label(scrollable_frame, text="Dev - Password:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.auth_password2, show="*", width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
+        password_frame2 = ttk.Frame(scrollable_frame)
+        password_frame2.grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
+        self.auth_password2_entry = ttk.Entry(password_frame2, textvariable=self.auth_password2, show="*", width=45)
+        self.auth_password2_entry.pack(side="left")
+        self.show_password2 = tk.BooleanVar(value=False)
+        ttk.Checkbutton(password_frame2, text="Anzeigen", variable=self.show_password2, command=lambda: self.toggle_password(self.auth_password2_entry, self.show_password2)).pack(side="left", padx=(5, 0))
         current_row += 1
         
         # ===== 3. REPOSITORIES =====
@@ -207,6 +211,25 @@ class BoMToEPDGUI:
         if dirname:
             self.output_dir.set(dirname)
     
+    def column_letter_to_index(self, letter):
+        """Konvertiert Spaltenbuchstaben (A, B, C, ..., Z, AA, AB, ...) in Index (0, 1, 2, ...)"""
+        if not letter:
+            return 0
+        letter = letter.upper().strip()
+        index = 0
+        for char in letter:
+            if not char.isalpha():
+                return 0
+            index = index * 26 + (ord(char) - ord('A') + 1)
+        return index - 1
+    
+    def toggle_password(self, entry, var):
+        """Schaltet die Sichtbarkeit des Passworts um"""
+        if var.get():
+            entry.config(show="")
+        else:
+            entry.config(show="*")
+    
     def preview_materials(self):
         """Lädt Materialien aus Excel und zeigt sie in einem Vorschau-Fenster an"""
         # Validierung
@@ -229,9 +252,9 @@ class BoMToEPDGUI:
                 self.main_file_path.get(),
                 self.sheet_name.get(),
                 self.mapping_file_path.get(),
-                self.start_row_index.get(),
-                self.material_column_index.get(),
-                self.amount_column_index.get()
+                0,  # Start immer bei Zeile 0
+                self.column_letter_to_index(self.material_column.get()),
+                self.column_letter_to_index(self.amount_column.get())
             )
             
             # Materialien in gefundene und fehlende trennen
@@ -409,9 +432,9 @@ class BoMToEPDGUI:
                 epd_unit=self.epd_unit.get(),
                 root_repository=self.root_repository.get(),
                 target_repository=self.target_repository.get(),
-                start_row_index=self.start_row_index.get(),
-                material_column_index=self.material_column_index.get(),
-                amount_column_index=self.amount_column_index.get(),
+                start_row_index=0,  # Start immer bei Zeile 0
+                material_column_index=self.column_letter_to_index(self.material_column.get()),
+                amount_column_index=self.column_letter_to_index(self.amount_column.get()),
                 auth_list=auth_list,
                 method_lib=method_lib,
                 url_api=self.url_api,
@@ -422,12 +445,13 @@ class BoMToEPDGUI:
             )
             
             if resp is not None:
-                self.root.after(0, messagebox.showinfo, "Erfolg", "EPD wurde erfolgreich erstellt!")
+                self.root.after(0, messagebox.showinfo, "Erfolg", f"EPD wurde erfolgreich erstellt!\n\nStatus-Code: {resp.status_code}\n\nJSON-Datei gespeichert in:\n{output_dir}")
             else:
                 self.root.after(0, messagebox.showwarning, "Abgebrochen", "Der Vorgang wurde abgebrochen.")
                 
         except Exception as e:
-            error_msg = f"Fehler: {str(e)}"
+            import traceback
+            error_msg = f"Fehler: {str(e)}\n\n{traceback.format_exc()}"
             self.root.after(0, messagebox.showerror, "Fehler", error_msg)
 
 if __name__ == "__main__":
