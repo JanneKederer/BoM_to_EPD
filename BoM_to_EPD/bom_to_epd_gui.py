@@ -28,11 +28,12 @@ class BoMToEPDGUI:
         self.output_dir = tk.StringVar(value=str(Path(__file__).parent / "results"))
         self.skip_missing = tk.BooleanVar(value=False)
         
-        # Auth-Einstellungen (URLs sind fest voreingestellt)
-        self.auth_url1 = "https://lca.ditwin.cloud"
-        self.auth_url2 = "https://lca.dev.ditwin.cloud"
-        self.auth_user1 = tk.StringVar(value="janne_teresa_kederer_siemens_energy_com")
-        self.auth_password1 = tk.StringVar(value="Test4EPDtree!")
+        # Auth-Einstellungen
+        # Hinweis: Prod (lca.ditwin.cloud) existiert auch, wird aber nicht in der GUI verwendet
+        self.auth_url1 = "https://lca.ditwin.cloud"  # Prod - nicht in GUI verwendet
+        self.auth_url2 = "https://lca.dev.ditwin.cloud"  # Dev - wird verwendet
+        self.auth_user1 = tk.StringVar(value="janne_teresa_kederer_siemens_energy_com")  # Prod - nicht in GUI verwendet
+        self.auth_password1 = tk.StringVar(value="Test4EPDtree!")  # Prod - nicht in GUI verwendet
         self.auth_user2 = tk.StringVar(value="janne_teresa_kederer_siemens_energy_com")
         self.auth_password2 = tk.StringVar(value="Test4EPDtree!")
         
@@ -93,7 +94,7 @@ class BoMToEPDGUI:
         # Materialien-Vorschau Button
         preview_frame = ttk.Frame(scrollable_frame)
         preview_frame.grid(row=current_row, column=0, columnspan=3, pady=10)
-        ttk.Button(preview_frame, text="📋 Materialien laden & Vorschau anzeigen", command=self.preview_materials, width=40).pack()
+        ttk.Button(preview_frame, text="Materialien laden & Vorschau anzeigen", command=self.preview_materials, width=40).pack()
         current_row += 1
         
         # ===== EPD-EINSTELLUNGEN =====
@@ -110,35 +111,14 @@ class BoMToEPDGUI:
         current_row += 1
         
         # ===== AUTHENTIFIZIERUNG =====
-        ttk.Label(scrollable_frame, text="Authentifizierung", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
+        ttk.Label(scrollable_frame, text="Authentifizierung (Dev - lca.dev.ditwin.cloud)", font=("Arial", 12, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", pady=(15, 5))
         current_row += 1
         
-        # Prod (lca.ditwin.cloud)
-        ttk.Label(scrollable_frame, text="Prod (lca.ditwin.cloud)", font=("Arial", 10, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 2))
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="Prod - User:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        ttk.Entry(scrollable_frame, textvariable=self.auth_user1, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="Prod - Password:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
-        password_frame1 = ttk.Frame(scrollable_frame)
-        password_frame1.grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
-        self.auth_password1_entry = ttk.Entry(password_frame1, textvariable=self.auth_password1, show="*", width=45)
-        self.auth_password1_entry.pack(side="left")
-        self.show_password1 = tk.BooleanVar(value=False)
-        ttk.Checkbutton(password_frame1, text="Anzeigen", variable=self.show_password1, command=lambda: self.toggle_password(self.auth_password1_entry, self.show_password1)).pack(side="left", padx=(5, 0))
-        current_row += 1
-        
-        # Dev (lca.dev.ditwin.cloud)
-        ttk.Label(scrollable_frame, text="Dev (lca.dev.ditwin.cloud)", font=("Arial", 10, "bold")).grid(row=current_row, column=0, columnspan=3, sticky="w", padx=5, pady=(10, 2))
-        current_row += 1
-        
-        ttk.Label(scrollable_frame, text="Dev - User:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="User:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
         ttk.Entry(scrollable_frame, textvariable=self.auth_user2, width=50).grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
         current_row += 1
         
-        ttk.Label(scrollable_frame, text="Dev - Password:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Label(scrollable_frame, text="Password:").grid(row=current_row, column=0, sticky="w", padx=5, pady=2)
         password_frame2 = ttk.Frame(scrollable_frame)
         password_frame2.grid(row=current_row, column=1, columnspan=2, padx=5, pady=2, sticky="w")
         self.auth_password2_entry = ttk.Entry(password_frame2, textvariable=self.auth_password2, show="*", width=45)
@@ -398,14 +378,10 @@ class BoMToEPDGUI:
     def _process_epd_thread(self):
         try:
             # Auth-Liste erstellen
+            # Hinweis: Prod (auth_url1) existiert auch, wird aber nur Dev verwendet
             auth_list = [
                 {
-                    "url": self.auth_url1,
-                    "user": self.auth_user1.get(),
-                    "password": self.auth_password1.get()
-                },
-                {
-                    "url": self.auth_url2,
+                    "url": self.auth_url2,  # Dev
                     "user": self.auth_user2.get(),
                     "password": self.auth_password2.get()
                 }

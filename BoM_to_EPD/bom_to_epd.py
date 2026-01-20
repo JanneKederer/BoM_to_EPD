@@ -1,61 +1,40 @@
+"""
+BoM zu EPD Konverter
+
+Dieses Modul enthält die Hauptlogik zum Konvertieren von Bill of Materials (BoM) 
+Excel-Dateien in EPD (Environmental Product Declaration) Format.
+"""
+
 import pandas as pd
 import json
 import requests
 from pathlib import Path
 import uuid
-
-# ---------------------------------------------------------------------------------------------------
-
-auth_list = [
-    {
-        "url": "https://lca.ditwin.cloud",
-        "user": "janne_teresa_kederer_siemens_energy_com",
-        "password": "Test4EPDtree!"
-    },
-    {
-        "url": "https://lca.dev.ditwin.cloud",
-        "user": "janne_teresa_kederer_siemens_energy_com",
-        "password": "Test4EPDtree!"
-    }
-]
-
-method_lib = {
-    "url": "https://lca.dev.ditwin.cloud",  # oder "https://lca.dev.ditwin.cloud" auch möglich?
-    "name": "en15804_pef31_indata_lcia_method"
-}
-
-# Name für EPD
-full_name = ""
-epd_unit = "kg"  # Unit z.B. "Item(s)"; "kg"
-
-# Repositories
-root_repository = "https://lca.dev.ditwin.cloud/Playground/Ecoinvent_3_10_EN15804_results2"
-target_repository = "https://lca.dev.ditwin.cloud/Computed/HVDC_Repo"
-
-# BoM
-main_file_path = r"C:\Users\z004ud7a\OneDrive - Siemens Energy\Documents\LCA Aufgaben\HVDC\CWC\CO2 Ion Exchanger.xlsx"
-sheet_name = "4.1 Carbon Footprint Tool"
-start_row_index = 5  # Zeilenindex: wo steht "Total net weight material" (0 = Zeile 1, 1 = Zeile 2 ...)
-amount_column_index = 4  # Spalte in der die Amounts stehen (0 = A, 1 = B, 2 = C, 3 = D, 4 = E ...) Standard ist Spalte E = Index 4
-
-# Mapping Datei: Materialnamen mit ecoinvent-Prozessen
-mapping_file_path = Path(__file__).parent / "Mapping_Materials_to_Processes.xlsx"
-
-output_dir = Path(r"C:\Users\z004ud7a\OneDrive - Siemens Energy\Documents\LCA Aufgaben\Modellierung\BoM_to_EPD\results")
-output_dir.mkdir(parents=True, exist_ok=True)
-
-# API
-url_api = "https://olca-epd.dev.ditwin.cloud/run-epd-tree"
-api_key = "develop"
-headers = {
-    "x-api-key": api_key,
-    "content-type": "application/json"
-}
-
-# ---------------------------------------------------------------------------------------------------
+from typing import Optional, Callable, List, Dict, Any, Union
 
 
-def read_materials_and_map(file_path, sheet_name, mapping_file, start_row_index=5, material_column_index=2, amount_column_index=4):
+def read_materials_and_map(
+    file_path: Union[str, Path],
+    sheet_name: str,
+    mapping_file: Union[str, Path],
+    start_row_index: int = 0,
+    material_column_index: int = 2,
+    amount_column_index: int = 4
+) -> pd.DataFrame:
+    """
+    Liest Materialien aus einer Excel-Datei und mappt sie mit Ecoinvent-Prozessen.
+    
+    Args:
+        file_path: Pfad zur BoM Excel-Datei
+        sheet_name: Name des Excel-Sheets
+        mapping_file: Pfad zur Mapping-Datei (Materialien zu Ecoinvent-Prozessen)
+        start_row_index: Zeilenindex, ab dem die Materialien beginnen (0 = erste Zeile)
+        material_column_index: Spaltenindex für Materialnamen (0 = A, 1 = B, ...)
+        amount_column_index: Spaltenindex für Mengen (0 = A, 1 = B, ...)
+    
+    Returns:
+        DataFrame mit Materialien, Amounts, Units und UUIDs für A1 und A3
+    """
     df_raw = pd.read_excel(file_path, sheet_name=sheet_name, header=None, engine='openpyxl')
     df = df_raw.iloc[start_row_index:, :].dropna(how='all')
 
@@ -64,7 +43,7 @@ def read_materials_and_map(file_path, sheet_name, mapping_file, start_row_index=
     final_prod = None
 
     for _, row in df.iterrows():
-        mat = str(row[material_column_index]).strip()  # Materialname aus konfigurierbarer Spalte
+        mat = str(row[material_column_index]).strip()
 
         if not mat or mat.lower() == 'nan':
             continue
@@ -112,11 +91,12 @@ def read_materials_and_map(file_path, sheet_name, mapping_file, start_row_index=
                          right_on="Material_name_norm",
                          how="left")
 
-    # Fehlende Materialien werden in process_epd behandelt
-
     # Final Amount (A1)
     df_merged['Final_Unit_A1'] = df_merged['Process_unit_A1'].fillna('kg')
-    df_merged['Final_Amount_A1'] = df_merged.apply(lambda r: r['Amount'] * (r['Conversion_factor_A1'] if pd.notna(r['Conversion_factor_A1']) else 1.0), axis=1)
+    df_merged['Final_Amount_A1'] = df_merged.apply(
+        lambda r: r['Amount'] * (r['Conversion_factor_A1'] if pd.notna(r['Conversion_factor_A1']) else 1.0),
+        axis=1
+    )
 
     # Falls A3 vorhanden
     df_merged['Final_Unit_A3'] = df_merged['Process_unit_A3']
@@ -131,8 +111,17 @@ def read_materials_and_map(file_path, sheet_name, mapping_file, start_row_index=
                       'Final_Amount_A3', 'Final_Unit_A3', 'Process_uuid_A3']]
 
 
-def read_excel_like_reference(df, root_repository):
-    """Baut inputs und components für A1 und optional A3"""
+def read_excel_like_reference(df: pd.DataFrame, root_repository: str) -> tuple[List[Dict], List[Dict]]:
+    """
+    Baut inputs und components für A1 und optional A3 aus dem DataFrame.
+    
+    Args:
+        df: DataFrame mit Materialien und UUIDs
+        root_repository: URL des Root-Repositories (Ecoinvent)
+    
+    Returns:
+        Tuple von (inputs, components) für die API
+    """
     components = []
     inputs = []
 
@@ -182,7 +171,30 @@ def read_excel_like_reference(df, root_repository):
     return inputs, components
 
 
-def generate_payload(full_name, inputs, components, epd_unit, target_repository, auth_list, method_lib):
+def generate_payload(
+    full_name: str,
+    inputs: List[Dict],
+    components: List[Dict],
+    epd_unit: str,
+    target_repository: str,
+    auth_list: List[Dict],
+    method_lib: Dict
+) -> Dict[str, Any]:
+    """
+    Generiert den JSON-Payload für die EPD-API.
+    
+    Args:
+        full_name: Name des EPDs
+        inputs: Liste der Input-Komponenten
+        components: Liste der Komponenten
+        epd_unit: Einheit des EPDs (z.B. "kg", "Item(s)")
+        target_repository: URL des Ziel-Repositories
+        auth_list: Liste der Authentifizierungsdaten
+        method_lib: Dictionary mit Method Library Informationen
+    
+    Returns:
+        Dictionary mit dem vollständigen Payload für die API
+    """
     root_id = str(uuid.uuid4())
 
     root_component = {
@@ -205,14 +217,31 @@ def generate_payload(full_name, inputs, components, epd_unit, target_repository,
     }
 
 
-def save_json(data, output_path):
-    """Speichert das JSON in einer Datei."""
+def save_json(data: Dict[str, Any], output_path: Path) -> None:
+    """
+    Speichert das JSON in einer Datei.
+    
+    Args:
+        data: Dictionary mit den zu speichernden Daten
+        output_path: Pfad zur Ausgabedatei
+    """
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     print(f"JSON gespeichert unter: {output_path}")
 
 
-def send_to_api(payload, url_api, api_key):
+def send_to_api(payload: Dict[str, Any], url_api: str, api_key: str) -> requests.Response:
+    """
+    Sendet den Payload an die EPD-API.
+    
+    Args:
+        payload: Dictionary mit dem Payload
+        url_api: URL der API
+        api_key: API-Schlüssel
+    
+    Returns:
+        Response-Objekt der API
+    """
     headers = {
         "x-api-key": api_key,
         "content-type": "application/json"
@@ -227,22 +256,61 @@ def send_to_api(payload, url_api, api_key):
     return resp
 
 
-def process_epd(main_file_path, sheet_name, mapping_file_path, full_name, epd_unit,
-                root_repository, target_repository, start_row_index, material_column_index, amount_column_index,
-                auth_list, method_lib, url_api, api_key, output_dir, skip_missing_materials=False,
-                log_callback=None):
+def process_epd(
+    main_file_path: Union[str, Path],
+    sheet_name: str,
+    mapping_file_path: Union[str, Path],
+    full_name: str,
+    epd_unit: str,
+    root_repository: str,
+    target_repository: str,
+    start_row_index: int,
+    material_column_index: int,
+    amount_column_index: int,
+    auth_list: List[Dict],
+    method_lib: Dict,
+    url_api: str,
+    api_key: str,
+    output_dir: Path,
+    skip_missing_materials: bool = False,
+    log_callback: Optional[Callable[[str], None]] = None
+) -> Optional[requests.Response]:
     """
     Hauptfunktion zum Verarbeiten der EPD-Erstellung.
-
+    
     Args:
+        main_file_path: Pfad zur BoM Excel-Datei
+        sheet_name: Name des Excel-Sheets
+        mapping_file_path: Pfad zur Mapping-Datei
+        full_name: Name des EPDs
+        epd_unit: Einheit des EPDs
+        root_repository: URL des Root-Repositories
+        target_repository: URL des Ziel-Repositories
+        start_row_index: Zeilenindex, ab dem Materialien beginnen
+        material_column_index: Spaltenindex für Materialnamen
+        amount_column_index: Spaltenindex für Mengen
+        auth_list: Liste der Authentifizierungsdaten
+        method_lib: Dictionary mit Method Library Informationen
+        url_api: URL der API
+        api_key: API-Schlüssel
+        output_dir: Ausgabeverzeichnis
         skip_missing_materials: Wenn True, werden fehlende Materialien automatisch übersprungen
         log_callback: Optional callback-Funktion für Log-Nachrichten (z.B. für GUI)
+    
+    Returns:
+        Response-Objekt der API oder None bei Abbruch
     """
     if log_callback:
         log_callback(f"Lese Materialien aus: {main_file_path}")
 
-    df_for_payload = read_materials_and_map(main_file_path, sheet_name, mapping_file_path,
-                                            start_row_index, material_column_index, amount_column_index)
+    df_for_payload = read_materials_and_map(
+        main_file_path,
+        sheet_name,
+        mapping_file_path,
+        start_row_index,
+        material_column_index,
+        amount_column_index
+    )
 
     # Fehlende Materialien prüfen
     missing_a1 = df_for_payload[df_for_payload['Process_uuid_A1'].isna()]
@@ -274,17 +342,3 @@ def process_epd(main_file_path, sheet_name, mapping_file_path, full_name, epd_un
     save_json(payload, output_path)
     resp = send_to_api(payload, url_api, api_key)
     return resp
-
-
-def main():
-    df_for_payload = read_materials_and_map(main_file_path, sheet_name, mapping_file_path, start_row_index, 2, amount_column_index)  # material_column_index=2 (Spalte C)
-    inputs, components = read_excel_like_reference(df_for_payload, root_repository)
-    payload = generate_payload(full_name, inputs, components, epd_unit, target_repository, auth_list, method_lib)
-    output_path = output_dir / f"{full_name}.json"
-    save_json(payload, output_path)
-    # print(json.dumps(payload, indent=2, ensure_ascii=False))
-    send_to_api(payload, url_api, api_key)
-
-
-if __name__ == "__main__":
-    main()
