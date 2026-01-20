@@ -17,7 +17,7 @@ class BoMToEPDGUI:
         self.sheet_name = tk.StringVar()
         self.full_name = tk.StringVar()
         self.epd_unit = tk.StringVar(value="kg")
-        self.epd_unit_options = ["kg", "Item(s)", "m", "m²", "m³", "t", "g", "l", "ml"]
+        self.epd_unit_options = ["kg", "Item(s)", "m", "m²", "m³", "t"]
         self.material_column = tk.StringVar()
         self.amount_column = tk.StringVar()
         self.root_repository = tk.StringVar(value="https://lca.dev.ditwin.cloud/Playground/Ecoinvent_3_10_EN15804_results2")

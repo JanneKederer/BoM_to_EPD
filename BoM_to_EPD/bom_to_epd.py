@@ -20,12 +20,12 @@ auth_list = [
 ]
 
 method_lib = {
-    "url": "https://lca.ditwin.cloud",  # oder "https://lca.dev.ditwin.cloud" auch möglich?
+    "url": "https://lca.dev.ditwin.cloud",  # oder "https://lca.dev.ditwin.cloud" auch möglich?
     "name": "en15804_pef31_indata_lcia_method"
 }
 
 # Name für EPD
-full_name = "Ion Exchanger - Purolite MB400 - 1kg"
+full_name = ""
 epd_unit = "kg"  # Unit z.B. "Item(s)"; "kg"
 
 # Repositories
