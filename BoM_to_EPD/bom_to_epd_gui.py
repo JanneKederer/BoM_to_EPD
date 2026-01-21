@@ -38,7 +38,7 @@ class BoMToEPDGUI:
         self.auth_password2 = tk.StringVar(value="Test4EPDtree!")
         
         # Method Lib - fest voreingestellt
-        self.method_url = "https://lca.ditwin.cloud"
+        self.method_url = "https://lca.dev.ditwin.cloud"
         self.method_name = "en15804_pef31_indata_lcia_method"
         
         self.create_widgets()
